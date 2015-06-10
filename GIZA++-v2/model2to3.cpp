@@ -24,6 +24,7 @@ USA.
 #include "Globals.h"
 
 #define _MAX_FERTILITY 10
+extern bool kn_smooth_ntable;
 
 double get_sum_of_partitions(int n, int source_pos, double alpha[_MAX_FERTILITY][MAX_SENTENCE_LENGTH_ALLOWED])
 {
@@ -173,6 +174,8 @@ void model3::estimate_t_a_d(sentenceHandler& sHandler1, Perplexity& perp, Perple
 		  (*(sPtrCache[i])).count += val ;
 		else
 		  tTable.incCount(es[i], fs[j], val);
+		if(smooth_model3)
+			tTable._lm.addBigram(fs[j], es[i], val);
 	      }
 	    aCountTable.getRef(i, j, l, m)+=val;
 	    if (0 != i)
@@ -206,7 +209,8 @@ void model3::estimate_t_a_d(sentenceHandler& sHandler1, Perplexity& perp, Perple
 	for (k = 0  ; k <  max_fertility_here ; k++){
 	  sum = get_sum_of_partitions(k, i, alpha);
 	  temp = r * sum * count;
-	  nCountTable.getRef(es[i], k)+=temp;	  
+	  nCountTable.getRef(es[i], k)+=temp;	
+	  if(kn_smooth_ntable)nCountTable._lm.addBigram(k,es[i],temp);
 	} // end of for (k ..)
       } // end of for (i == ..)
     } // end of  if (!simple)
@@ -221,7 +225,12 @@ void model3::estimate_t_a_d(sentenceHandler& sHandler1, Perplexity& perp, Perple
       tTable.printCountTable(tfile.c_str(),Elist.getVocabList(),Flist.getVocabList(),1);
     }
   if( updateT )
-    tTable.normalizeTable(Elist, Flist);
+  {
+	if(smooth_model3)
+		tTable.copyFromLM();
+	else
+		tTable.normalizeTable(Elist, Flist);
+  }
   aCountTable.normalize(aTable);
   dCountTable.normalize(dTable);
   if (!simple)

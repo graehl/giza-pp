@@ -5,10 +5,9 @@ For more information, refer to the README files and the following pages:
   http://www.fjoch.com/mkcls.html
   http://www.fjoch.com/GIZA++.html
 
-UPDATE 4th April 2015, by Hieu Hoang:
+Jonathan Graehl (Jun 2015): merge hznlp/giza-kn kneser-ney smoothing -
+paper at http://www3.nd.edu/~dchiang/papers/zhang-acl14.pdf suggests
++1 BLEU and +3 F-score if you use new parameters (default = enabled!)
 
-Works with most versions of gcc, including really old versions. Doesn't work with recent versions of clang.
-
-Why not try using mgiza? It's multi-threaded and kept up to date to work with most compilers
+Hieu Hoang suggests mgiza - it's multi-threaded and resumable:
    https://github.com/moses-smt/mgiza
-

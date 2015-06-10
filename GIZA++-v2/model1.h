@@ -46,7 +46,7 @@ USA.
 #include "Dictionary.h"
 
 extern int NumberOfVALIalignments;
-
+extern bool smooth_model1;
 class report_info{
  protected:
   Perplexity& perp;
@@ -77,6 +77,7 @@ public:
   tmodel<COUNT, PROB>&tTable;
   Vector<WordEntry>& evlist ;
   Vector<WordEntry>& fvlist ;
+
 public:
   int ALmissing,ALtoomuch,ALeventsMissing,ALeventsToomuch;
   int ALmissingVALI,ALtoomuchVALI,ALeventsMissingVALI,ALeventsToomuchVALI;

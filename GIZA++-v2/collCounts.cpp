@@ -9,14 +9,14 @@ modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, 
+This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, 
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 USA.
 
 */
@@ -29,6 +29,7 @@ USA.
 #include "transpair_model5.h"
 #include "transpair_modelhmm.h"
 #include "Parameter.h"
+extern bool kn_smooth_ntable;
 
 extern float COUNTINCREASE_CUTOFF_AL;
 // unifies collectCountsOverAlignments and findAlignmentNeighborhood FJO-20/07/99
@@ -47,28 +48,28 @@ int collectCountsOverNeighborhood(const MoveSwapMatrix<TRANSPAIR>&msc,LogProb as
     }
   for(PositionIndex j=1;j<=m;j++)
       for(PositionIndex i=0;i<=l;i++)
-	if( msc(j)!=i && !msc.isDelMove(i,j) )
-	  {
-	    LogProb newscore=ascore*msc.cmove(i,j);
-	    total_move+=newscore;
-	    nAl++;
-	    cmove(i,j)+=newscore;
-	    negmove[j]+=newscore;
-	    plus1fert[i]+=newscore;
-	    minus1fert[msc(j)]+=newscore;
-	  }
+  if( msc(j)!=i && !msc.isDelMove(i,j) )
+    {
+      LogProb newscore=ascore*msc.cmove(i,j);
+      total_move+=newscore;
+      nAl++;
+      cmove(i,j)+=newscore;
+      negmove[j]+=newscore;
+      plus1fert[i]+=newscore;
+      minus1fert[msc(j)]+=newscore;
+    }
   for(PositionIndex j1=1;j1<=m;j1++)
     for(PositionIndex j2=j1+1;j2<=m;j2++)
       if( msc(j1)!=msc(j2) && !msc.isDelSwap(j1,j2) )
-	{
-	  LogProb newscore=ascore*msc.cswap(j1,j2);
-	  total_swap+=newscore;
-	  nAl++;
-	  cswap(msc(j1),j2)+=newscore;
-	  cswap(msc(j2),j1)+=newscore;
-	  negswap[j1]+=newscore; 
-	  negswap[j2]+=newscore;
-	}
+  {
+    LogProb newscore=ascore*msc.cswap(j1,j2);
+    total_swap+=newscore;
+    nAl++;
+    cswap(msc(j1),j2)+=newscore;
+    cswap(msc(j2),j1)+=newscore;
+    negswap[j1]+=newscore;
+    negswap[j2]+=newscore;
+  }
   total_count+=total_move+total_swap;
   for(PositionIndex j=1;j<=m;j++)
     for(PositionIndex i=0;i<=l;i++)
@@ -77,14 +78,14 @@ int collectCountsOverNeighborhood(const MoveSwapMatrix<TRANSPAIR>&msc,LogProb as
     {
       LogProb temp=minus1fert[i]+plus1fert[i];
       if( msc.fert(i)<MAX_FERTILITY )
-	ncount(i,msc.fert(i))+=total_count-temp;
+  ncount(i,msc.fert(i))+=total_count-temp;
       if(msc.fert(i)>0&&msc.fert(i)-1<MAX_FERTILITY)
-	ncount(i,msc.fert(i)-1)+=minus1fert[i];
+  ncount(i,msc.fert(i)-1)+=minus1fert[i];
       else
-	if( minus1fert[i]!=0.0 )
-	  cerr << "ERROR: M1Fa: " << minus1fert[i] << ' ' << i << ' ' << msc.fert(i)<< endl;
-      if(msc.fert(i)+1<MAX_FERTILITY) 
-	ncount(i,msc.fert(i)+1)+=plus1fert[i];
+  if( minus1fert[i]!=0.0 )
+    cerr << "ERROR: M1Fa: " << minus1fert[i] << ' ' << i << ' ' << msc.fert(i)<< endl;
+      if(msc.fert(i)+1<MAX_FERTILITY)
+  ncount(i,msc.fert(i)+1)+=plus1fert[i];
     }
   LogProb temp=minus1fert[0]+plus1fert[0];
   p1count += (total_count-temp)*(LogProb)msc.fert(0);
@@ -94,7 +95,7 @@ int collectCountsOverNeighborhood(const MoveSwapMatrix<TRANSPAIR>&msc,LogProb as
       p1count += (minus1fert[0])*(LogProb)(msc.fert(0)-1);
       p0count += (minus1fert[0])*(LogProb)(m-2*(msc.fert(0)-1));
     }
-  else 
+  else
     if( minus1fert[0]!=0.0 )
       cerr << "ERROR: M1Fb: " << minus1fert[0] << endl;
   if(int(m)-2*(int(msc.fert(0))+1)>=0)
@@ -118,18 +119,19 @@ void _collectCountsOverNeighborhoodForSophisticatedModels(const MoveSwapMatrix<T
   Mmsc.check();
   const PositionIndex m=msc.get_m(),l=msc.get_l();
   for(PositionIndex j=1;j<=m;++j)
-    if( msc(j)!=0 )
+    if( msc(j)!=0 ) {
       if( msc.get_head(msc(j))==j)
-	{
-	  int ep=msc.prev_cept(msc(j));
-	  //massert( &d4Table->getCountRef_first(j,msc.get_center(ep),d4Table->ewordclasses.getClass(ef.get_es(ep)),d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m) ==  ef.getCountFirst(ep,j,msc.get_center(ep)));
-	  d4Table->getCountRef_first(j,msc.get_center(ep),d4Table->ewordclasses.getClass(ef.get_es(ep)),d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m)+=normalized_ascore;
-	}
+      {
+        int ep=msc.prev_cept(msc(j));
+        //massert( &d4Table->getCountRef_first(j,msc.get_center(ep),d4Table->ewordclasses.getClass(ef.get_es(ep)),d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m) ==  ef.getCountFirst(ep,j,msc.get_center(ep)));
+        d4Table->getCountRef_first(j,msc.get_center(ep),d4Table->ewordclasses.getClass(ef.get_es(ep)),d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m)+=normalized_ascore;
+      }
       else
-	{
-	  //massert( &d4Table->getCountRef_bigger(j,msc.prev_in_cept(j),0,d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m) == ef.getCountSecond(j,msc.prev_in_cept(j) ));
-	  d4Table->getCountRef_bigger(j,msc.prev_in_cept(j),0,d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m)+=normalized_ascore;
-	}
+      {
+        //massert( &d4Table->getCountRef_bigger(j,msc.prev_in_cept(j),0,d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m) == ef.getCountSecond(j,msc.prev_in_cept(j) ));
+        d4Table->getCountRef_bigger(j,msc.prev_in_cept(j),0,d4Table->fwordclasses.getClass(ef.get_fs(j)),l,m)+=normalized_ascore;
+      }
+    }
 }
 
 template<class TRANSPAIR>
@@ -144,33 +146,33 @@ void _collectCountsOverNeighborhoodForSophisticatedModels(const MoveSwapMatrix<T
   Vector<char> vac(m+1,0);
   for(PositionIndex i=1;i<=l;i++)
     {
-      PositionIndex cur_j=msc.als_i[i]; 
+      PositionIndex cur_j=msc.als_i[i];
       PositionIndex prev_j=0;
       PositionIndex k=0;
       if(cur_j) { // process first word of cept
-	k++;
-	d5Table->getCountRef_first(vacancies(vac,cur_j),vacancies(vac,msc.get_center(prev_cept)),
-				   d5Table->fwordclasses.getClass(ef.get_fs(cur_j)),l,m,vac_all-msc.fert(i)+k)+=normalized_ascore;
-	vac_all--;
-	assert(vac[cur_j]==0);
-	vac[cur_j]=1;
-	Mmsc.check();
-	prev_j=cur_j;
-	cur_j=msc.als_j[cur_j].next;
+  k++;
+  d5Table->getCountRef_first(vacancies(vac,cur_j),vacancies(vac,msc.get_center(prev_cept)),
+           d5Table->fwordclasses.getClass(ef.get_fs(cur_j)),l,m,vac_all-msc.fert(i)+k)+=normalized_ascore;
+  vac_all--;
+  assert(vac[cur_j]==0);
+  vac[cur_j]=1;
+  Mmsc.check();
+  prev_j=cur_j;
+  cur_j=msc.als_j[cur_j].next;
       }
       while(cur_j) { // process following words of cept
-	k++;
-	int vprev=vacancies(vac,prev_j);
-	d5Table->getCountRef_bigger(vacancies(vac,cur_j),vprev,d5Table->fwordclasses.getClass(ef.get_fs(cur_j)),l,m,vac_all-vprev/*war weg*/-msc.fert(i)+k)+=normalized_ascore;
-	vac_all--;
-	vac[cur_j]=1;
-	Mmsc.check();
-	prev_j=cur_j;
-	cur_j=msc.als_j[cur_j].next;
+  k++;
+  int vprev=vacancies(vac,prev_j);
+  d5Table->getCountRef_bigger(vacancies(vac,cur_j),vprev,d5Table->fwordclasses.getClass(ef.get_fs(cur_j)),l,m,vac_all-vprev/*war weg*/-msc.fert(i)+k)+=normalized_ascore;
+  vac_all--;
+  vac[cur_j]=1;
+  Mmsc.check();
+  prev_j=cur_j;
+  cur_j=msc.als_j[cur_j].next;
       }
       assert(k==msc.fert(i));
       if( k )
-	prev_cept=i;
+  prev_cept=i;
     }
   assert(vac_all==msc.fert(0));
 }
@@ -195,39 +197,39 @@ double collectCountsOverNeighborhoodForSophisticatedModels(const MoveSwapMatrix<
     {
       WordIndex old=x(j);
       if( i!=old&& !msc.isDelMove(i,j) )
-	{
-	  msc.check();
-	  double c=msc.cmove(i,j)*normalized_ascore;
-	  if(c > COUNTINCREASE_CUTOFF_AL )
-	    {
-	      x.set(j,i);
-	      _collectCountsOverNeighborhoodForSophisticatedModels<TRANSPAIR>(msc,x,msc.get_ef(),c,d5Table);
-	      NumberOfAlignmentsInSophisticatedCountCollection++;
-	      x.set(j,old);
-	      sum+=c;
-	    }
-	  msc.check();
-	}
-    }      
+  {
+    msc.check();
+    double c=msc.cmove(i,j)*normalized_ascore;
+    if(c > COUNTINCREASE_CUTOFF_AL )
+      {
+        x.set(j,i);
+        _collectCountsOverNeighborhoodForSophisticatedModels<TRANSPAIR>(msc,x,msc.get_ef(),c,d5Table);
+        NumberOfAlignmentsInSophisticatedCountCollection++;
+        x.set(j,old);
+        sum+=c;
+      }
+    msc.check();
+  }
+    }
   for(PositionIndex j1=1;j1<=m;j1++)
     for(PositionIndex j2=j1+1;j2<=m;j2++)
       if( msc(j1)!=msc(j2) && !msc.isDelSwap(j1,j2) )
-	{
-	  double c=msc.cswap(j1,j2)*normalized_ascore;
-	  msc.check();
-	  if(c > COUNTINCREASE_CUTOFF_AL )
-	    {
-	      int old1=msc(j1),old2=msc(j2);
-	      x.set(j1,old2);
-	      x.set(j2,old1);
-	      _collectCountsOverNeighborhoodForSophisticatedModels<TRANSPAIR>(msc,x,msc.get_ef(),c,d5Table);
-	      NumberOfAlignmentsInSophisticatedCountCollection++;
-	      x.set(j1,old1);
-	      x.set(j2,old2);
-	      sum+=c;
-	    }
-	  msc.check();
-	}
+  {
+    double c=msc.cswap(j1,j2)*normalized_ascore;
+    msc.check();
+    if(c > COUNTINCREASE_CUTOFF_AL )
+      {
+        int old1=msc(j1),old2=msc(j2);
+        x.set(j1,old2);
+        x.set(j2,old1);
+        _collectCountsOverNeighborhoodForSophisticatedModels<TRANSPAIR>(msc,x,msc.get_ef(),c,d5Table);
+        NumberOfAlignmentsInSophisticatedCountCollection++;
+        x.set(j1,old1);
+        x.set(j2,old2);
+        sum+=c;
+      }
+    msc.check();
+  }
   msc.check();
   return sum;
 }
@@ -251,43 +253,40 @@ int collectCountsOverNeighborhood(const Vector<pair<MoveSwapMatrix<TRANSPAIR>*,L
   if( addCounts && d4Table )
     {
       for(unsigned int i=0;i<smsc.size();++i)
-	{
-	  //for(WordIndex j=1;j<=m;j++)for(WordIndex ii=0;ii<=l;ii++)
-	  //  (*smsc[i].first).cmove(ii,j);
-	  sum2+=collectCountsOverNeighborhoodForSophisticatedModels(*smsc[i].first,smsc[i].second/all_total,d4Table);    
-	}
+  {
+    //for(WordIndex j=1;j<=m;j++)for(WordIndex ii=0;ii<=l;ii++)
+    //  (*smsc[i].first).cmove(ii,j);
+    sum2+=collectCountsOverNeighborhoodForSophisticatedModels(*smsc[i].first,smsc[i].second/all_total,d4Table);
+  }
       if(!(fabs(count-sum2)<0.05))
-	cerr << "WARNING: DIFFERENT SUMS: (" << count << ") (" << sum2 << ")\n";
+  cerr << "WARNING: DIFFERENT SUMS: (" << count << ") (" << sum2 << ")\n";
     }
  if( addCounts )
     {
-      for(PositionIndex i=0;i<=l;i++) 
-	{
-	  for(PositionIndex j=1;j<=m;j++)
-	    {
-	      LogProb ijadd=dtcount(i,j)/all_total;
-	      if( ijadd>COUNTINCREASE_CUTOFF_AL )
-		{
-		  tTable.incCount(es[i],fs[j],ijadd);
-		  dCountTable.getRef(j,i,l,m)+=ijadd;
-		  aCountTable.getRef(i,j,l,m)+=ijadd;
-		}
-	    }
-	  if( i>0 )
-	    for(PositionIndex n=0;n<MAX_FERTILITY;n++)
-	      nCountTable.getRef(es[i],n)+=ncount(i,n)/all_total;
-	}
+      for(PositionIndex i=0;i<=l;i++)
+  {
+    for(PositionIndex j=1;j<=m;j++)
+      {
+        LogProb ijadd=dtcount(i,j)/all_total;
+        if( (float)ijadd>COUNTINCREASE_CUTOFF_AL )
+    {
+      tTable.incCount(es[i],fs[j],ijadd);
+      if(smooth_model3)
+        tTable._lm.addBigram(fs[j],es[i],ijadd);
+      dCountTable.getRef(j,i,l,m)+=ijadd;
+      aCountTable.getRef(i,j,l,m)+=ijadd;
+    }
+      }
+    if( i>0 )
+      for(PositionIndex n=0;n<MAX_FERTILITY;n++)
+      {
+      nCountTable.getRef(es[i],n)+=ncount(i,n)/all_total;
+      if(kn_smooth_ntable)
+        nCountTable._lm.addBigram(n,es[i],ncount(i,n)/all_total);
+    }
+  }
       p0count+=p0/all_total;
       p1count+=p1/all_total;
     }
  return nAl;
 }
-
-
-
-
-
-
-
-
-

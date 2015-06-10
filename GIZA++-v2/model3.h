@@ -49,6 +49,7 @@ USA.
 #include "D4Tables.h"
 #include "AlignTables.h"
 
+extern bool smooth_model3;
 class model3 : public model2
 {
 public:

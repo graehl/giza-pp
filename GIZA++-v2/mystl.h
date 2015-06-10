@@ -18,8 +18,10 @@ using namespace _STL;
 #include "myassert.h"
 #include <string>
 #include <utility>
-
-#if __GNUC__==2
+#if __cplusplus >= 201103L
+#include <unordered_map>
+#define hash_map unordered_map
+#elif __GNUC__==2
 #include <hash_map>
 #elsif __GNUC__==3
 #include <ext/hash_map>
@@ -27,7 +29,7 @@ using __gnu_cxx::hash_map;
 #else
 #include <tr1/unordered_map>
 #define hash_map unordered_map
-using namespace std::tr1;
+using std::tr1::unordered_map;
 #endif
 
 #include <vector>
@@ -58,7 +60,7 @@ inline double verfProb(int n1,int n2)
   if( n1==1 )return prob*n1mult;
   else if( n1==2 )return prob*n2mult;
   else if( n1==3 )return prob*n3mult;
-  else 
+  else
   return prob;
 }
 
@@ -81,33 +83,33 @@ int lev(const T&s1,const T&s2)
   for(unsigned int i=0;i<=s1.size();i++)
     for(unsigned int j=0;j<=s2.size();j++)
       {
-	if( i==0&&j==0 )
-	  a(i,j)=0;
-	else
-	  {
-	    int aDEL=100,aINS=100,aSUB=100;
-	    if(i>0)
-	      aDEL=a(i-1,j)+1;
-	    if(j>0)
-	      aINS=a(i,j-1)+1;
-	    if(i>0&&j>0)
-	      aSUB=a(i-1,j-1)+ !(s1[i-1]==s2[j-1]);
-	    if( aSUB<=aDEL && aSUB<=aINS )
-	      {
-		a(i,j)=aSUB;
-		back(i,j)=pair<int,int>(i-1,j-1);
-	      }
-	    else if( aDEL<=aSUB && aDEL<=aINS )
-	      {
-		a(i,j)=aDEL;
-		back(i,j)=pair<int,int>(i-1,j);
-	      }
-	    else
-	      {
-		a(i,j)=aINS;
-		back(i,j)=pair<int,int>(i,j-1);
-	      }
-	  }
+  if( i==0&&j==0 )
+    a(i,j)=0;
+  else
+    {
+      int aDEL=100,aINS=100,aSUB=100;
+      if(i>0)
+        aDEL=a(i-1,j)+1;
+      if(j>0)
+        aINS=a(i,j-1)+1;
+      if(i>0&&j>0)
+        aSUB=a(i-1,j-1)+ !(s1[i-1]==s2[j-1]);
+      if( aSUB<=aDEL && aSUB<=aINS )
+        {
+    a(i,j)=aSUB;
+    back(i,j)=pair<int,int>(i-1,j-1);
+        }
+      else if( aDEL<=aSUB && aDEL<=aINS )
+        {
+    a(i,j)=aDEL;
+    back(i,j)=pair<int,int>(i-1,j);
+        }
+      else
+        {
+    a(i,j)=aINS;
+    back(i,j)=pair<int,int>(i,j-1);
+        }
+    }
       }
   return a(s1.size(),s2.size());
 }
@@ -121,15 +123,15 @@ float rel_lev(const T&s1,const T&s2)
     return min(1.0,lev(s1,s2)/(double)s1.size());
 }*/
 
-template<class V> int Hash(const pair<V,V>&a) 
+template<class V> int Hash(const pair<V,V>&a)
 { return Hash(a.first)+13001*Hash(a.second); }
 
 template<class T1,class T2>
 ostream& operator<<(ostream &out,const pair<T1,T2> &ir)
-{ 
+{
   out << "(" << ir.first << "," << ir.second << ")";
   return out;
-} 
+}
 
 inline int Hash(const string& s)
 {
@@ -189,22 +191,22 @@ public:
   bool defined(const A&a) const
     { return find(a)!=this->end(); }
   const B&operator[](const A&a)const
-    { 
+    {
       typename MY_HASH_BASE::const_iterator pos=find(a);
       if( pos==this->end() )
-	return init;
+  return init;
       else
-	return pos->second;
+  return pos->second;
     }
   B&operator[](const A&a)
-    { 
+    {
       typename MY_HASH_BASE::iterator pos=find(a);
       if( pos==this->end() )
-	{
-	  insert(MY_HASH_BASE::value_type(a,init));
-	  pos=find(a);
-	  iassert(pos!=this->end());
-	}
+  {
+    insert(MY_HASH_BASE::value_type(a,init));
+    pos=find(a);
+    iassert(pos!=this->end());
+  }
       return pos->second;
     }
   const B&initValue()const
@@ -221,7 +223,7 @@ ostream & operator<<(ostream&out,const leda_h_array<T,U>&w)
   forall_defined_h(T,U,t,w)
     {
       if( makeNl )
-	out << "\n       ";
+  out << "\n       ";
       out << "EL:" << t << " INH:" << w[t] << ".";
       makeNl=1;
     }
@@ -242,7 +244,7 @@ bool operator==(const leda_h_array<A,B>&p1,const leda_h_array<A,B>&p2)
     if( !( p1[v]==p2[v]) ) return 0;
   forall_defined_h(A,B,v,p2)
     if( !( p1[v]==p2[v]) ) return 0;
-  return 1; 
+  return 1;
 }
 
 template<class T>
@@ -270,7 +272,7 @@ T normalize_if_possible_with_increment(T*a,T*b,int increment)
     {
       T factor=increment/(b-a);
       for(T*i=a;i!=b;i+=increment)
-	*i=factor;
+  *i=factor;
     }
   return sum;
 }
@@ -295,7 +297,7 @@ template<class T>
 void smooth_standard(T*a,T*b,double p)
 {
   int n=b-a;
-  if( n==0 ) 
+  if( n==0 )
     return;
   double pp=p/n;
   for(T*i=a;i!=b;++i)

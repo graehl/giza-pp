@@ -29,8 +29,7 @@ USA.
 #include <string>
 #include "Globals.h"
 #include <fstream>
-#include <cstring>
-
+#include <strings.h>
 inline unsigned int mConvert(const string&s,unsigned int &i)
 { 
   if( strcasecmp(s.c_str(),"yes")==0 || strcasecmp(s.c_str(),"y")==0 || strcasecmp(s.c_str(),"true")==0 || strcasecmp(s.c_str(),"t")==0 ) { cerr << "TRUE\n";return i=1; }

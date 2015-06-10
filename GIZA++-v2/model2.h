@@ -44,6 +44,8 @@ USA.
 #include "Perplexity.h"
 #include "vocab.h"
 
+extern bool smooth_model2;
+
 class model2 : public model1
 {
  public:

@@ -8,14 +8,14 @@ modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, 
+This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, 
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 USA.
 
 */
@@ -57,12 +57,12 @@ extern short NoEmptyWord;
    table is the probability (d(j/l,m,i), where j is word target position, i is
    source word position connected to it, m is target sentence length, and l is
    source sentence length) or count collected for it. The  probability and the
-   count are represented as log integer probability as 
-   defined by the class LogProb .  
+   count are represented as log integer probability as
+   defined by the class LogProb .
 
   This class is used to represents a Tables (probabiliity) and d (distortion)
   tables and also their corresponding count tables .
-  
+
   *--------------------------------------------------------------------------*/
 
 inline int Mabs(int a)
@@ -78,7 +78,7 @@ class amodel
 {
  public:
   Array4<VALTYPE> a;
-  bool is_distortion ; 
+  bool is_distortion ;
   WordIndex MaxSentLength;
   bool ignoreL, ignoreM;
   VALTYPE get(WordIndex aj, WordIndex j, WordIndex l, WordIndex m)const
@@ -91,7 +91,7 @@ class amodel
   static float smooth_factor;
   amodel(bool flag)
     : a(MAX_SENTENCE_LENGTH+1,0.0), is_distortion(flag), MaxSentLength(MAX_SENTENCE_LENGTH)
-    {}; 
+    {};
   VALTYPE&getRef(WordIndex aj, WordIndex j, WordIndex l, WordIndex m)
     {
       massert( (!is_distortion) || aj<=m );massert( (!is_distortion) || j<=l );
@@ -106,11 +106,11 @@ class amodel
   VALTYPE getValue(WordIndex aj, WordIndex j, WordIndex l, WordIndex m) const
     {
       if( is_distortion==0 )
-	return max(double(PROB_SMOOTH),amodel_smooth_factor/(l+1)+(1.0-amodel_smooth_factor)*get(aj, j, l, m));
+  return max(double(PROB_SMOOTH),amodel_smooth_factor/(l+1)+(1.0-amodel_smooth_factor)*get(aj, j, l, m));
       else
-	return max(double(PROB_SMOOTH),amodel_smooth_factor/m+(1.0-amodel_smooth_factor)*get(aj, j, l, m));	
+  return max(double(PROB_SMOOTH),amodel_smooth_factor/m+(1.0-amodel_smooth_factor)*get(aj, j, l, m));
     }
-  void printTable(const char* filename)const ; 
+  void printTable(const char* filename)const ;
   template<class COUNT>
   void normalize(amodel<COUNT>& aTable)const
     {
@@ -118,51 +118,51 @@ class amodel
       COUNT total;
       int nParam=0;
       for(l=0;l<MaxSentLength;l++)
-	for(m=0;m<MaxSentLength;m++)
-	  {
-	    if( CompactADTable && l!=m )
-	      continue;
-	    unsigned int L=((CompactADTable&&is_distortion)?MaxSentLength:(l+1))-1;
-	    unsigned int M=((CompactADTable&&!is_distortion)?MaxSentLength:(m+1))-1;
-	    if( is_distortion==0 )
-	      for(j=1;j<=M; j++)
-		{
-		  total=0.0;
-		  for(i=0;i<=L;i++)
-		    {
-		      total+=get(i, j, L, M);
-		    }
-		  if( total )
-		    for(i=0;i<=L;i++)
-		      {
-			nParam++;
-			aTable.getRef(i, j, L, M)=get(i, j, L, M)/total;
-			massert(aTable.getRef(i,j,L,M)<=1.0);
-			if( NoEmptyWord&&i==0 )
-			  aTable.getRef(i,j,L,M)=0;
-		      }
-		}
-	    else
-	      for(i=0;i<=L;i++)
-		{
-		  total=0.0;
-		  for(j=1;j<=M;j++)
-		    total+=get(j, i, L, M);
-		  if( total )
-		    for(j=1;j<=M;j++)
-		      {
-			aTable.getRef(j, i, L, M)=amodel_smooth_factor/M+(1.0-amodel_smooth_factor)*get(j, i, L, M)/total;
-			nParam++;
-			massert(aTable.getRef(j,i,L,M)<=1.0);
-			if( NoEmptyWord&&i==0 )
-			  aTable.getRef(j,i,L,M)=0;
-		      }
-		}
-	  }
+  for(m=0;m<MaxSentLength;m++)
+    {
+      if( CompactADTable && l!=m )
+        continue;
+      unsigned int L=((CompactADTable&&is_distortion)?MaxSentLength:(l+1))-1;
+      unsigned int M=((CompactADTable&&!is_distortion)?MaxSentLength:(m+1))-1;
+      if( is_distortion==0 )
+        for(j=1;j<=M; j++)
+    {
+      total=0.0;
+      for(i=0;i<=L;i++)
+        {
+          total+=get(i, j, L, M);
+        }
+      if( total )
+        for(i=0;i<=L;i++)
+          {
+      nParam++;
+      aTable.getRef(i, j, L, M)=get(i, j, L, M)/total;
+      massert(aTable.getRef(i,j,L,M)<=1.0);
+      if( NoEmptyWord&&i==0 )
+        aTable.getRef(i,j,L,M)=0;
+          }
+    }
+      else
+        for(i=0;i<=L;i++)
+    {
+      total=0.0;
+      for(j=1;j<=M;j++)
+        total+=get(j, i, L, M);
+      if( total )
+        for(j=1;j<=M;j++)
+          {
+      aTable.getRef(j, i, L, M)=amodel_smooth_factor/M+(1.0-amodel_smooth_factor)*get(j, i, L, M)/total;
+      nParam++;
+      massert(aTable.getRef(j,i,L,M)<=1.0);
+      if( NoEmptyWord&&i==0 )
+        aTable.getRef(j,i,L,M)=0;
+          }
+    }
+    }
       cout << "A/D table contains " << nParam << " parameters.\n";
     }
 
-  void readTable(const char *filename); 
+  void readTable(const char *filename);
   void clear()
     {a.clear();}
 };

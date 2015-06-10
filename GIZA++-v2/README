@@ -4,9 +4,15 @@ It is a program for learning statistical translation models from
 bitext. It is an implementation of the models described in
 (Brown et al., 1993), (Vogel et al., 1996), (Och et al., 2000a), 
 (Och et al., 2000b).
+
+Modification:
+April 10th, by Hui Zhang (huizhang.fuan@gmail.com): 
+            Add various smoothing techniques to the M-step of EM, including: 
+            expected KN (Zhang and Chiang, 2014) , fractional WB, 
+            Variational Bayes (Riley  and  Gildea, 2012), 
+            TSBN KN (Tam and Schultz 2008, Bisani and Ney 2008)
+
 ========================================================================
-
-
 
 CONTENTS of this README file:
 
@@ -140,6 +146,21 @@ default values of the parameters typically are optimized with respect
 to the corpora I use and typically give good results. It is
 nevertheless important that these parameters are always optimized for
 every new task.
+
+Following parameters are added for smoothing
+
+For expected KN, TSBN KN and frational WB:
+smoothingtype = 0  (0 kn, 1 wb)
+smoothmodel1 = 0  (kn smoothing for Model 1, 1 smooth, 0 (default) not)
+smoothmodel2 = 0  (kn smoothing for Model 2, 1 smooth, 0 (default) not)
+smoothmodel3 = 0  (kn smoothing for Model 3, 1 smooth, 0 (default) not)
+smoothmodel4 = 0  (kn smoothing for Model 4, 1 smooth, 0 (default) not)
+smoothmodelh = 0  (kn smoothing for Model HMM, 1 smooth, 0 (default) not)
+tamcutoff = -1  (cutoff for TSBN KN, default value is -1 means we are not using TSBN KN, otherwise we use TSBN KN instead of expected KN)
+
+For Variational Bayes
+vb = 0  (variational_bayes, 0 (default): turn off, 1: on)
+vbalpha = 0  (alpha for vb, default 0)
 
 ==========================================================================
 Part IV: Input File Formats
@@ -489,6 +510,45 @@ The implemented alignment models IBM-1 to IBM-5 and HMM were originally describe
 	BOOKTITLE	= COLING96
 }
 
+The following article describes ow to apply variational Bayes in GIZA++ 
+
+@InProceedings{riley2012,
+  author    = {Riley, Darcey  and  Gildea, Daniel},
+  title     = {Improving the {IBM} Alignment Models Using Variational {Bayes}},
+  booktitle = procof # {ACL (Volume 2: Short Papers)},
+  xmonth     = {July},
+  year      = {2012},
+  xaddress   = {Jeju Island, Korea},
+  xpublisher = {Association for Computational Linguistics},
+  pages     = {306--310},
+  url       = {http://www.aclweb.org/anthology/P12-2060}
+}
+
+The following articles describes how to tune D for fractional KN
+
+@article{bisani+ney:2008,
+    Author = {Maximilian Bisani and Hermann Ney},
+    Journal = {Speech Communication},
+    Number = 5,
+    Pages = {434--451},
+    Title = {Joint-Sequence Models for Grapheme-to-Phoneme Conversion},
+    Volume = 50,
+    Year = 2008}
+
+@inproceedings{tam+schultz:2008,
+    Author = {Yik-Cheung Tam and Tanja Schultz},
+    Booktitle = {Proc. NIPS},
+    Pages = {1633--1640},
+    Title = {Correlated Bigram {LSA} for Unsupervised Language Model Adaptation},
+    Year = 2008}
+
+The following article describes expected KN
+
+@inproceedings{zhang+chiang:2014,
+    Author = {Hui Zhang and David Chiang},
+    Booktitle = {Proc. ACL},
+    Title = {Kneser-Ney Smoothing on Expected Counts},
+    Year = 2014}
 
 Part VII: New features
 ======================

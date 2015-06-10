@@ -1,0 +1,8 @@
+.history
+GIZA++
+snt2plain.out
+plain2snt.out
+snt2cooc.out
+*.o
+*.dSYM
+*.gizacfg

@@ -8,14 +8,14 @@ modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, 
+This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, 
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 USA.
 
 */
@@ -32,7 +32,7 @@ USA.
 #include "vocab.h"
 #include "Perplexity.h"
 #include "Dictionary.h"
-#include "utility.h" 
+#include "utility.h"
 #include "Parameter.h"
 #include "myassert.h"
 #include "D4Tables.h"
@@ -43,6 +43,18 @@ USA.
 #define ITER_M2 0
 #define ITER_MH 5
 
+
+GLOBAL_PARAMETER3(bool,smooth_model1,"smooth_model1","smooth model 1","s1","kn smoothing for Model 1, 1 smooth, 0 (default) not",PARLEV_ITER,1);
+GLOBAL_PARAMETER3(bool,smooth_model2,"smooth_model2","smooth model 2","s2","kn smoothing for Model 2, 1 smooth, 0 (default) not",PARLEV_ITER,1);
+GLOBAL_PARAMETER3(bool,smooth_modelh,"smooth_modelh","smooth model h","sh","kn smoothing for Model HMM, 1 smooth, 0 (default) not",PARLEV_ITER,1);
+GLOBAL_PARAMETER3(bool,smooth_model3,"smooth_model3","smooth model 3","s3","kn smoothing for Model 3, 1 smooth, 0 (default) not",PARLEV_ITER,1);
+GLOBAL_PARAMETER3(bool,smooth_model4,"smooth_model4","smooth model 4","s4","kn smoothing for Model 4, 1 smooth, 0 (default) not",PARLEV_ITER,1);
+GLOBAL_PARAMETER(bool, vb,"vb","variational_bayes, 0 (default): turn off, 1: on",PARLEV_ITER,0);
+GLOBAL_PARAMETER(double, vbalpha,"vbalpha","alpha for vb, default 0",PARLEV_ITER,0);
+GLOBAL_PARAMETER(double, tamcutoff,"tamcutoff","cutoff for TSBN KN, default value is -1 means we are not using TSBN KN, otherwise we use TSBN KN instead of expected KN",PARLEV_ITER,-1);
+GLOBAL_PARAMETER(int, interpolate,"interpolate","0: zeroform, 1: unigram; 2: uniform",PARLEV_ITER,1);
+GLOBAL_PARAMETER2(int, smooth_type, "smoothing_type", "st", "0 kn, 1 wb", PARLEV_ITER,0);
+GLOBAL_PARAMETER2(bool, kn_smooth_ntable, "kn_smooth_ntable", "ks", "1 yes, 0 not", PARLEV_ITER,0);
 GLOBAL_PARAMETER3(int,Model1_Iterations,"Model1_Iterations","NO. ITERATIONS MODEL 1","m1","number of iterations for Model 1",PARLEV_ITER,5);
 GLOBAL_PARAMETER3(int,Model2_Iterations,"Model2_Iterations","NO. ITERATIONS MODEL 2","m2","number of iterations for Model 2",PARLEV_ITER,ITER_M2);
 GLOBAL_PARAMETER3(int,HMM_Iterations,"HMM_Iterations","mh","number of iterations for HMM alignment model","mh",              PARLEV_ITER,ITER_MH);
@@ -85,9 +97,9 @@ Vector<map< pair<int,int>,char > > ReferenceAlignment;
 
 bool useDict = false;
 string CoocurrenceFile;
-string Prefix, LogFilename, OPath, Usage, 
-  SourceVocabFilename, TargetVocabFilename, CorpusFilename, 
-  TestCorpusFilename, t_Filename, a_Filename, p0_Filename, d_Filename, 
+string Prefix, LogFilename, OPath, Usage,
+  SourceVocabFilename, TargetVocabFilename, CorpusFilename,
+  TestCorpusFilename, t_Filename, a_Filename, p0_Filename, d_Filename,
   n_Filename, dictionary_Filename;
 
 ofstream logmsg ;
@@ -151,7 +163,7 @@ void printGIZAPars(ostream&out)
 }
 
 const char*stripPath(const char*fullpath)
-  // strip the path info from the file name 
+  // strip the path info from the file name
 {
   const char *ptr = fullpath + strlen(fullpath) - 1 ;
   while(ptr && ptr > fullpath && *ptr != '/'){ptr--;}
@@ -171,21 +183,21 @@ void printDecoderConfigFile()
     cerr << "\nCannot write to " << decoder_config_file <<'\n';
     exit(1);
   }
-  decoder << "# Template for Configuration File for the Rewrite Decoder\n# Syntax:\n" 
-	  << "#         <Variable> = <value>\n#         '#' is the comment character\n"
-	  << "#================================================================\n"
-	  << "#================================================================\n"
-	  << "# LANGUAGE MODEL FILE\n# The full path and file name of the language model file:\n";
+  decoder << "# Template for Configuration File for the Rewrite Decoder\n# Syntax:\n"
+    << "#         <Variable> = <value>\n#         '#' is the comment character\n"
+    << "#================================================================\n"
+    << "#================================================================\n"
+    << "# LANGUAGE MODEL FILE\n# The full path and file name of the language model file:\n";
   decoder << "LanguageModelFile =\n";
   decoder << "#================================================================\n"
-	  << "#================================================================\n"
-	  << "# TRANSLATION MODEL FILES\n# The directory where the translation model tables as created\n"
-	  << "# by Giza are located:\n#\n"
-	  << "# Notes: - All translation model \"source\" files are assumed to be in\n"
-	  << "#          TM_RawDataDir, the binaries will be put in TM_BinDataDir\n"
-	  << "#\n#        - Attention: RELATIVE PATH NAMES DO NOT WORK!!!\n"
-	  << "#\n#        - Absolute paths (file name starts with /) will override\n"
-	  << "#          the default directory.\n\n";
+    << "#================================================================\n"
+    << "# TRANSLATION MODEL FILES\n# The directory where the translation model tables as created\n"
+    << "# by Giza are located:\n#\n"
+    << "# Notes: - All translation model \"source\" files are assumed to be in\n"
+    << "#          TM_RawDataDir, the binaries will be put in TM_BinDataDir\n"
+    << "#\n#        - Attention: RELATIVE PATH NAMES DO NOT WORK!!!\n"
+    << "#\n#        - Absolute paths (file name starts with /) will override\n"
+    << "#          the default directory.\n\n";
   // strip file prefix info and leave only the path name in Prefix
   string path = Prefix.substr(0, Prefix.find_last_of("/")+1);
   if( path=="" )
@@ -193,13 +205,13 @@ void printDecoderConfigFile()
   decoder << "TM_RawDataDir = " << path << '\n';
   decoder << "TM_BinDataDir = " << path << '\n' << '\n';
   decoder << "# file names of the TM tables\n# Notes:\n"
-	  << "# 1. TTable and InversTTable are expected to use word IDs not\n"
-	  << "#    strings (Giza produces both, whereby the *.actual.* files\n"
-	  << "#    use strings and are THE WRONG CHOICE.\n"
-	  << "# 2. FZeroWords, on the other hand, is a simple list of strings\n"
-	  << "#    with one word per line. This file is typically edited\n"
-	  << "#    manually. Hoeever, this one listed here is generated by GIZA\n\n";
-  
+    << "# 1. TTable and InversTTable are expected to use word IDs not\n"
+    << "#    strings (Giza produces both, whereby the *.actual.* files\n"
+    << "#    use strings and are THE WRONG CHOICE.\n"
+    << "# 2. FZeroWords, on the other hand, is a simple list of strings\n"
+    << "#    with one word per line. This file is typically edited\n"
+    << "#    manually. Hoeever, this one listed here is generated by GIZA\n\n";
+
   int lastmodel;
   if (Model5_Iterations>0)
     lastmodel = 5 ;
@@ -245,7 +257,7 @@ void printDecoderConfigFile()
       << "PrintOriginal       = TRUE # repeat original sentence in the output\n"
       << "TopTranslations     = 3    # number of n best translations to be returned\n"
       << "PrintProbabilities  = TRUE # give the probabilities for the translations\n\n";
-      
+
       decoder << "# LOGGING OPTIONS\n"
       << "LogFile = - # empty means: no log, dash means: STDOUT\n"
       << "LogLM = true # log language model lookups\n"
@@ -255,41 +267,41 @@ void printDecoderConfigFile()
 
 
 void printAllTables(vcbList& eTrainVcbList, vcbList& eTestVcbList,
-		    vcbList& fTrainVcbList, vcbList& fTestVcbList, model1& m1)
+        vcbList& fTrainVcbList, vcbList& fTestVcbList, model1& m1)
 {
   cerr << "writing Final tables to Disk \n";
   string t_inv_file = Prefix + ".ti.final" ;
   if( !FEWDUMPS)
-    m1.getTTable().printProbTableInverse(t_inv_file.c_str(), m1.getEnglishVocabList(), 
-					 m1.getFrenchVocabList(), 
-					 m1.getETotalWCount(), 
-					 m1.getFTotalWCount());
+    m1.getTTable().printProbTableInverse(t_inv_file.c_str(), m1.getEnglishVocabList(),
+           m1.getFrenchVocabList(),
+           m1.getETotalWCount(),
+           m1.getFTotalWCount());
   t_inv_file = Prefix + ".actual.ti.final" ;
   if( !FEWDUMPS )
-    m1.getTTable().printProbTableInverse(t_inv_file.c_str(), 
-					 eTrainVcbList.getVocabList(), 
-					 fTrainVcbList.getVocabList(), 
-					 m1.getETotalWCount(), 
-					 m1.getFTotalWCount(), true);
-  
+    m1.getTTable().printProbTableInverse(t_inv_file.c_str(),
+           eTrainVcbList.getVocabList(),
+           fTrainVcbList.getVocabList(),
+           m1.getETotalWCount(),
+           m1.getFTotalWCount(), true);
+
   string perp_filename = Prefix + ".perp" ;
   ofstream of_perp(perp_filename.c_str());
-  
+
   cout << "Writing PERPLEXITY report to: " << perp_filename << '\n';
   if(!of_perp){
     cerr << "\nERROR: Cannot write to " << perp_filename <<'\n';
     exit(1);
   }
-  
+
   if (testCorpus)
-    generatePerplexityReport(trainPerp, testPerp, trainViterbiPerp, 
-			     testViterbiPerp, of_perp, (*corpus).getTotalNoPairs1(), 
-			     (*testCorpus).getTotalNoPairs1(),
-			     true);
-  else 
-    generatePerplexityReport(trainPerp, testPerp, trainViterbiPerp, testViterbiPerp, 
-			     of_perp, (*corpus).getTotalNoPairs1(), 0, true);
-  
+    generatePerplexityReport(trainPerp, testPerp, trainViterbiPerp,
+           testViterbiPerp, of_perp, (*corpus).getTotalNoPairs1(),
+           (*testCorpus).getTotalNoPairs1(),
+           true);
+  else
+    generatePerplexityReport(trainPerp, testPerp, trainViterbiPerp, testViterbiPerp,
+           of_perp, (*corpus).getTotalNoPairs1(), 0, true);
+
   string eTrainVcbFile = Prefix + ".trn.src.vcb" ;
   ofstream of_eTrainVcb(eTrainVcbFile.c_str());
   cout << "Writing source vocabulary list to : " << eTrainVcbFile << '\n';
@@ -298,7 +310,7 @@ void printAllTables(vcbList& eTrainVcbList, vcbList& eTestVcbList,
     exit(1);
   }
   eTrainVcbList.printVocabList(of_eTrainVcb) ;
-  
+
   string fTrainVcbFile = Prefix + ".trn.trg.vcb" ;
   ofstream of_fTrainVcb(fTrainVcbFile.c_str());
   cout << "Writing source vocabulary list to : " << fTrainVcbFile << '\n';
@@ -307,9 +319,9 @@ void printAllTables(vcbList& eTrainVcbList, vcbList& eTestVcbList,
     exit(1);
   }
   fTrainVcbList.printVocabList(of_fTrainVcb) ;
-  
-  //print test vocabulary list 
-  
+
+  //print test vocabulary list
+
   string eTestVcbFile = Prefix + ".tst.src.vcb" ;
   ofstream of_eTestVcb(eTestVcbFile.c_str());
   cout << "Writing source vocabulary list to : " << eTestVcbFile << '\n';
@@ -318,7 +330,7 @@ void printAllTables(vcbList& eTrainVcbList, vcbList& eTestVcbList,
     exit(1);
   }
   eTestVcbList.printVocabList(of_eTestVcb) ;
-  
+
   string fTestVcbFile = Prefix + ".tst.trg.vcb" ;
   ofstream of_fTestVcb(fTestVcbFile.c_str());
   cout << "Writing source vocabulary list to : " << fTestVcbFile << '\n';
@@ -329,9 +341,9 @@ void printAllTables(vcbList& eTrainVcbList, vcbList& eTestVcbList,
   fTestVcbList.printVocabList(of_fTestVcb) ;
   printDecoderConfigFile();
   if (testCorpus)
-    printOverlapReport(m1.getTTable(), *testCorpus, eTrainVcbList, 
-		       fTrainVcbList, eTestVcbList, fTestVcbList);
-  
+    printOverlapReport(m1.getTTable(), *testCorpus, eTrainVcbList,
+           fTrainVcbList, eTestVcbList, fTestVcbList);
+
 }
 
 bool readNextSent(istream&is,map< pair<int,int>,char >&s,int&number)
@@ -345,20 +357,20 @@ bool readNextSent(istream&is,map< pair<int,int>,char >&s,int&number)
   else
     if( number!=n )
       {
-	cerr << "ERROR: readNextSent: DIFFERENT NUMBERS: " << number << " " << n << '\n';
-	return 0;
+  cerr << "ERROR: readNextSent: DIFFERENT NUMBERS: " << number << " " << n << '\n';
+  return 0;
       }
   int nS,nP,nO;
   nS=nP=nO=0;
   while( is >> x )
     {
       if( x=="SENT:" )
-	return 1;
+  return 1;
       int n1,n2;
       is >> n1 >> n2;
       map< pair<int,int>,char >::const_iterator i=s.find(pair<int,int>(n1,n2));
       if( i==s.end()||i->second=='P' )
-	s[pair<int,int>(n1,n2)]=x[0];
+  s[pair<int,int>(n1,n2)]=x[0];
       massert(x[0]=='S'||x[0]=='P');
       nS+= (x[0]=='S');
       nP+= (x[0]=='P');
@@ -382,13 +394,13 @@ void ReadAlignment(const string&x,Vector<map< pair<int,int>,char > >&a)
   while( emptySent(sent) && (readNextSent(infile,sent,number)) )
     {
       if( int(a.size())!=number )
-	cerr << "ERROR: ReadAlignment: " << a.size() << " " << number << '\n';
+  cerr << "ERROR: ReadAlignment: " << a.size() << " " << number << '\n';
       a.push_back(sent);
       number++;
     }
   cout << "Read: " << a.size() << " sentences in reference alignment." << '\n';
 }
-    
+
 
 void initGlobals(void)
 {
@@ -405,17 +417,17 @@ void convert(const map< pair<int,int>,char >&reference,alignment&x)
   for(map< pair<int,int>,char >::const_iterator i=reference.begin();i!=reference.end();++i)
     {
       if( i->first.first+1>int(m) )
-	{
-	  cerr << "ERROR m to big: " << i->first.first << " " << i->first.second+1 << " " << l << " " << m << " is wrong.\n";
-	  continue;
-	}
+  {
+    cerr << "ERROR m to big: " << i->first.first << " " << i->first.second+1 << " " << l << " " << m << " is wrong.\n";
+    continue;
+  }
       if( i->first.second+1>int(l) )
-	{
-	  cerr << "ERROR l to big: " << i->first.first << " " << i->first.second+1 << " " << l << " " << m << " is wrong.\n";
-	  continue;
-	}
+  {
+    cerr << "ERROR l to big: " << i->first.first << " " << i->first.second+1 << " " << l << " " << m << " is wrong.\n";
+    continue;
+  }
       if( x(i->first.first+1)!=0 )
-	cerr << "ERROR: position " << i->first.first+1 << " already set\n";
+  cerr << "ERROR: position " << i->first.first+1 << " already set\n";
       x.set(i->first.first+1,i->first.second+1);
     }
 }
@@ -425,37 +437,37 @@ double ErrorsInAlignment(const map< pair<int,int>,char >&reference,const Vector<
   for(unsigned int j=1;j<test.size();j++)
     {
       if( test[j]>0 )
-	{
-	  map< pair<int,int>,char >::const_iterator i=reference.find(make_pair(test[j]-1,j-1));
-	  if( i==reference.end() )
-	    {
-	      toomuch++;
-	      err++;
-	    }
-	  else
-	    if( !(i->second=='S' || i->second=='P'))
-	      cerr << "ERROR: wrong symbol in reference alignment '" << i->second << ' ' << int(i->second) << " no:" << pair_no<< "'\n";
-	  eventsToomuch++;
-	}
+  {
+    map< pair<int,int>,char >::const_iterator i=reference.find(make_pair(test[j]-1,j-1));
+    if( i==reference.end() )
+      {
+        toomuch++;
+        err++;
+      }
+    else
+      if( !(i->second=='S' || i->second=='P'))
+        cerr << "ERROR: wrong symbol in reference alignment '" << i->second << ' ' << int(i->second) << " no:" << pair_no<< "'\n";
+    eventsToomuch++;
+  }
     }
   for(map< pair<int,int>,char >::const_iterator i=reference.begin();i!=reference.end();++i)
     {
       if( i->second=='S' )
-	{
-	  unsigned int J=i->first.second+1;
-	  unsigned int I=i->first.first+1;
-	  if( int(J)>=int(test.size())||int(I)>int(l)||int(J)<1||int(I)<1 )
-	    cerr << "ERROR: alignment outside of range in reference alignment" << J << " " << test.size() << " (" << I << " " << l << ") no:" << pair_no << '\n';
-	  else
-	    {
-	      if(test[J]!=I)
-		{
-		  missing++;
-		  err++;
-		}
-	    }
-	  eventsMissing++;
-	}
+  {
+    unsigned int J=i->first.second+1;
+    unsigned int I=i->first.first+1;
+    if( int(J)>=int(test.size())||int(I)>int(l)||int(J)<1||int(I)<1 )
+      cerr << "ERROR: alignment outside of range in reference alignment" << J << " " << test.size() << " (" << I << " " << l << ") no:" << pair_no << '\n';
+    else
+      {
+        if(test[J]!=I)
+    {
+      missing++;
+      err++;
+    }
+      }
+    eventsMissing++;
+  }
     }
   if( Verbose )
     cout << err << " errors in sentence\n";
@@ -469,7 +481,7 @@ double ErrorsInAlignment(const map< pair<int,int>,char >&reference,const Vector<
 vcbList *globeTrainVcbList,*globfTrainVcbList;
 
 double StartTraining(int&result)
-{ 
+{
   double errors=0.0;
   vcbList eTrainVcbList, fTrainVcbList;
   globeTrainVcbList=&eTrainVcbList;
@@ -487,10 +499,10 @@ double StartTraining(int&result)
   fTrainVcbList.readVocabList();
   cout << "Source vocabulary list has " << eTrainVcbList.uniqTokens() << " unique tokens \n";
   cout << "Target vocabulary list has " << fTrainVcbList.uniqTokens() << " unique tokens \n";
-  
+
   vcbList eTestVcbList(eTrainVcbList) ;
   vcbList fTestVcbList(fTrainVcbList) ;
-  
+
   corpus = new sentenceHandler(CorpusFilename.c_str(), &eTrainVcbList, &fTrainVcbList);
 
   if (TestCorpusFilename == "NONE")
@@ -498,8 +510,8 @@ double StartTraining(int&result)
 
   if (TestCorpusFilename != ""){
     cout << "Test corpus will be read from: " << TestCorpusFilename << '\n';
-      testCorpus= new sentenceHandler(TestCorpusFilename.c_str(), 
-						       &eTestVcbList, &fTestVcbList);
+      testCorpus= new sentenceHandler(TestCorpusFilename.c_str(),
+                   &eTestVcbList, &fTestVcbList);
       cout << " Test total # sentence pairs : " <<(*testCorpus).getTotalNoPairs1()<<" weighted:"<<(*testCorpus).getTotalNoPairs2() <<'\n';
 
       cout << "Size of the source portion of test corpus: " << eTestVcbList.totalVocab() << " tokens\n";
@@ -507,9 +519,9 @@ double StartTraining(int&result)
       cout << "In source portion of the test corpus, only " << eTestVcbList.uniqTokensInCorpus() << " unique tokens appeared\n";
       cout << "In target portion of the test corpus, only " << fTestVcbList.uniqTokensInCorpus() << " unique tokens appeared\n";
       cout << "ratio (target/source) : " << double(fTestVcbList.totalVocab()) /
-	eTestVcbList.totalVocab() << '\n';
+  eTestVcbList.totalVocab() << '\n';
   }
-  
+
   cout << " Train total # sentence pairs (weighted): " << corpus->getTotalNoPairs2() << '\n';
   cout << "Size of source portion of the training corpus: " << eTrainVcbList.totalVocab()-corpus->getTotalNoPairs2() << " tokens\n";
   cout << "Size of the target portion of the training corpus: " << fTrainVcbList.totalVocab() << " tokens \n";
@@ -519,7 +531,7 @@ double StartTraining(int&result)
   LAMBDA = double(fTrainVcbList.totalVocab()) / (eTrainVcbList.totalVocab()-corpus->getTotalNoPairs2());
   cout << "= " << LAMBDA << '\n';
   // load dictionary
-  Dictionary *dictionary;  
+  Dictionary *dictionary;
   useDict = !dictionary_Filename.empty();
   if (useDict) dictionary = new Dictionary(dictionary_Filename.c_str());
   else dictionary = new Dictionary("");
@@ -536,14 +548,14 @@ double StartTraining(int&result)
   tmodel<COUNT, PROB> tTable;
 #endif
 
-  model1 m1(CorpusFilename.c_str(), eTrainVcbList, fTrainVcbList,tTable,trainPerp, 
-	    *corpus,&testPerp, testCorpus, 
-	    trainViterbiPerp, &testViterbiPerp);
+  model1 m1(CorpusFilename.c_str(), eTrainVcbList, fTrainVcbList,tTable,trainPerp,
+      *corpus,&testPerp, testCorpus,
+      trainViterbiPerp, &testViterbiPerp);
    amodel<PROB>  aTable(false);
    amodel<COUNT> aCountTable(false);
    model2 m2(m1,aTable,aCountTable);
    hmm h(m2);
-   model3 m3(m2); 
+   model3 m3(m2);
    if(ReadTablePrefix.length() )
      {
        string number = "final";
@@ -572,91 +584,91 @@ double StartTraining(int&result)
        makeSetCommand("model4smoothfactor","0.0",getGlobalParSet(),2);
        //makeSetCommand("model5smoothfactor","0.0",getGlobalParSet(),2);
        if( corpus||testCorpus )
-	 {
-	   sentenceHandler *x=corpus;
-	   if(x==0)
-	     x=testCorpus;
-	   cout << "Text corpus exists.\n";
-	   x->rewind();
-	   while(x&&x->getNextSentence(sent)){
-	     Vector<WordIndex>& es = sent.eSent;
-	     Vector<WordIndex>& fs = sent.fSent;
-	     int l=es.size()-1;
-	     int m=fs.size()-1;
-	     transpair_model4 tm4(es,fs,m1.tTable,m2.aTable,m3.dTable,m3.nTable,1-p0,p0,&d4m);
-	     alignment al(l,m);
-	     cout << "I use the alignment " << sent.sentenceNo-1 << '\n';
-	     //convert(ReferenceAlignment[sent.sentenceNo-1],al);
-	     transpair_model3 tm3(es,fs,m1.tTable,m2.aTable,m3.dTable,m3.nTable,1-p0,p0,0);
-	     double p=tm3.prob_of_target_and_alignment_given_source(al,1);
-	     cout << "Sentence " << sent.sentenceNo << " has IBM-3 prob " << p << '\n';
-	     p=tm4.prob_of_target_and_alignment_given_source(al,3,1);
-	     cout << "Sentence " << sent.sentenceNo << " has IBM-4 prob " << p << '\n';
-	     //transpair_model5 tm5(es,fs,m1.tTable,m2.aTable,m3.dTable,m3.nTable,1-p0,p0,&d5m);
-	     //p=tm5.prob_of_target_and_alignment_given_source(al,3,1);
-	     //cout << "Sentence " << sent.sentenceNo << " has IBM-5 prob " << p << '\n';
-	   }
-	 }
+   {
+     sentenceHandler *x=corpus;
+     if(x==0)
+       x=testCorpus;
+     cout << "Text corpus exists.\n";
+     x->rewind();
+     while(x&&x->getNextSentence(sent)){
+       Vector<WordIndex>& es = sent.eSent;
+       Vector<WordIndex>& fs = sent.fSent;
+       int l=es.size()-1;
+       int m=fs.size()-1;
+       transpair_model4 tm4(es,fs,m1.tTable,m2.aTable,m3.dTable,m3.nTable,1-p0,p0,&d4m);
+       alignment al(l,m);
+       cout << "I use the alignment " << sent.sentenceNo-1 << '\n';
+       //convert(ReferenceAlignment[sent.sentenceNo-1],al);
+       transpair_model3 tm3(es,fs,m1.tTable,m2.aTable,m3.dTable,m3.nTable,1-p0,p0,0);
+       double p=tm3.prob_of_target_and_alignment_given_source(al,1);
+       cout << "Sentence " << sent.sentenceNo << " has IBM-3 prob " << p << '\n';
+       p=tm4.prob_of_target_and_alignment_given_source(al,3,1);
+       cout << "Sentence " << sent.sentenceNo << " has IBM-4 prob " << p << '\n';
+       //transpair_model5 tm5(es,fs,m1.tTable,m2.aTable,m3.dTable,m3.nTable,1-p0,p0,&d5m);
+       //p=tm5.prob_of_target_and_alignment_given_source(al,3,1);
+       //cout << "Sentence " << sent.sentenceNo << " has IBM-5 prob " << p << '\n';
+     }
+   }
        else
-	 {
-	   cout << "No corpus exists.\n";
-	 }
+   {
+     cout << "No corpus exists.\n";
+   }
     }
-   else 
+   else
      {
        // initialize model1
        bool seedModel1 = false ;
        if(Model1_Iterations > 0){
-	 if (t_Filename != "NONE" && t_Filename != ""){
-	   seedModel1 = true ;
-	   m1.load_table(t_Filename.c_str());
-	 }
-	 minIter=m1.em_with_tricks(Model1_Iterations,seedModel1,*dictionary, useDict);
-	 errors=m1.errorsAL();
+   if (t_Filename != "NONE" && t_Filename != ""){
+     seedModel1 = true ;
+     m1.load_table(t_Filename.c_str());
+   }
+   minIter=m1.em_with_tricks(Model1_Iterations,seedModel1,*dictionary, useDict);
+   errors=m1.errorsAL();
        }
-       
-	 {
-	   if(Model2_Iterations > 0){
-	     m2.initialize_table_uniformly(*corpus);
-	     minIter=m2.em_with_tricks(Model2_Iterations);
-	     errors=m2.errorsAL();
-	   }
-	   if(HMM_Iterations > 0){
-	     cout << "NOTE: I am doing iterations with the HMM model!\n";
-	     h.makeWordClasses(m1.Elist,m1.Flist,SourceVocabFilename+".classes",TargetVocabFilename+".classes");
-	     h.initialize_table_uniformly(*corpus);
-	     minIter=h.em_with_tricks(HMM_Iterations);
-	     errors=h.errorsAL();
-	   }
-	   
-	   if(Transfer2to3||HMM_Iterations==0){
-	     if( HMM_Iterations>0 )
-	       cout << "WARNING: transfor is not needed, as results are overwritten bei transfer from HMM.\n";
-	     string test_alignfile = Prefix +".tst.A2to3";
-	     if (testCorpus)
-	       m2.em_loop(testPerp, *testCorpus,Transfer_Dump_Freq==1&&!NODUMPS,test_alignfile.c_str(), testViterbiPerp, true);
-	     if (testCorpus)
-	       cout << "\nTransfer: TEST CROSS-ENTROPY " << testPerp.cross_entropy() << " PERPLEXITY " << testPerp.perplexity() << "\n\n";
-	     if (Transfer == TRANSFER_SIMPLE)
-	       m3.transferSimple(*corpus, Transfer_Dump_Freq==1&&!NODUMPS,trainPerp, trainViterbiPerp);
-	     else  
-	       m3.transfer(*corpus, Transfer_Dump_Freq==1&&!NODUMPS, trainPerp, trainViterbiPerp);
-	     errors=m3.errorsAL();
-	   }
-	   
-	   if( HMM_Iterations>0 )
-	     m3.setHMM(&h);
-	   if(Model3_Iterations > 0 || Model4_Iterations > 0 || Model5_Iterations || Model6_Iterations
-	      )
-	     {
-	       minIter=m3.viterbi(Model3_Iterations,Model4_Iterations,Model5_Iterations,Model6_Iterations);
-	       errors=m3.errorsAL();
-	     }
-	   if (FEWDUMPS||!NODUMPS)
-	     {
-	       printAllTables(eTrainVcbList,eTestVcbList,fTrainVcbList,fTestVcbList,m1 );
-	     }
-	 }
+
+   {
+     if(Model2_Iterations > 0){
+       m2.initialize_table_uniformly(*corpus);
+       minIter=m2.em_with_tricks(Model2_Iterations);
+       errors=m2.errorsAL();
+     }
+     if(HMM_Iterations > 0){
+       cout << "NOTE: I am doing iterations with the HMM model!\n";
+       h.makeWordClasses(m1.Elist,m1.Flist,SourceVocabFilename+".classes",TargetVocabFilename+".classes");
+       h.initialize_table_uniformly(*corpus);
+       minIter=h.em_with_tricks(HMM_Iterations);
+       errors=h.errorsAL();
+     }
+
+     if(Transfer2to3||HMM_Iterations==0){
+       if( HMM_Iterations>0 )
+         cout << "WARNING: transfor is not needed, as results are overwritten bei transfer from HMM.\n";
+       string test_alignfile = Prefix +".tst.A2to3";
+       if (testCorpus)
+         m2.em_loop(testPerp, *testCorpus,Transfer_Dump_Freq==1&&!NODUMPS,test_alignfile.c_str(), testViterbiPerp, true);
+       if (testCorpus)
+         cout << "\nTransfer: TEST CROSS-ENTROPY " << testPerp.cross_entropy() << " PERPLEXITY " << testPerp.perplexity() << "\n\n";
+       if (Transfer == TRANSFER_SIMPLE)
+         m3.transferSimple(*corpus, Transfer_Dump_Freq==1&&!NODUMPS,trainPerp, trainViterbiPerp);
+       else
+         m3.transfer(*corpus, Transfer_Dump_Freq==1&&!NODUMPS, trainPerp, trainViterbiPerp);
+       errors=m3.errorsAL();
+     }
+
+     if( HMM_Iterations>0 )
+       m3.setHMM(&h);
+     if(Model3_Iterations > 0 || Model4_Iterations > 0 || Model5_Iterations || Model6_Iterations
+        )
+       {
+         minIter=m3.viterbi(Model3_Iterations,Model4_Iterations,Model5_Iterations,Model6_Iterations);
+         errors=m3.errorsAL();
+       }
+     if (FEWDUMPS||!NODUMPS)
+       {
+         printAllTables(eTrainVcbList,eTestVcbList,fTrainVcbList,fTestVcbList,m1 );
+       }
+   }
      }
    result=minIter;
    return errors;
@@ -692,28 +704,26 @@ int main(int argc, char* argv[])
   Usage = temp + " <config_file> [options]\n";
   if(argc < 2)
     {
-      printHelp();    
+      printHelp();
       exit(1);
     }
-  
+
   initGlobals() ;
   parseArguments(argc, argv);
-  
+
   if (Log)
     logmsg.open(LogFilename.c_str(), ios::out);
-  
+
   printGIZAPars(cout);
   int a=-1;
-  double errors=0.0;
   if( OldADBACKOFF!=0 )
     cerr << "WARNING: Parameter -adBackOff does not exist further; use CompactADTable instead.\n";
   if( MAX_SENTENCE_LENGTH > MAX_SENTENCE_LENGTH_ALLOWED )
     cerr << "ERROR: MAX_SENTENCE_LENGTH is too big " << MAX_SENTENCE_LENGTH << " > " << MAX_SENTENCE_LENGTH_ALLOWED << '\n';
-    errors=StartTraining(a);
+    StartTraining(a);
   fn = time(NULL);    // finish time
   cout << '\n' << "Entire Training took: " << difftime(fn, st1) << " seconds\n";
   cout << "Program Finished at: "<< ctime(&fn) << '\n';
   cout << "==========================================================\n";
   return 0;
 }
-

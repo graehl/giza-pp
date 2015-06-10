@@ -29,6 +29,7 @@ USA.
 #include "D4Tables.h"
 #include "transpair_model4.h"
 
+extern bool smooth_model3;
 class OneMoveSwap
 {
  public:

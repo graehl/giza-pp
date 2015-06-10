@@ -8,14 +8,14 @@ modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, 
+This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, 
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 USA.
 
 */
@@ -23,13 +23,16 @@ USA.
 #define _ntables_h 1
 #include "Array2.h"
 #include "Vector.h"
-#include <cassert>
+#include <assert.h>
 #include "defs.h"
 #include "vocab.h"
 #include "myassert.h"
 #include "Globals.h"
+#include "smooth/LM.h"
 
 extern double NTablesFactorGraphemes,NTablesFactorGeneral;
+extern bool kn_smooth_ntable;
+extern int interpolate;
 
 template <class VALTYPE>
 class nmodel
@@ -37,6 +40,7 @@ class nmodel
  private:
   Array2<VALTYPE, Vector<VALTYPE> > ntab;
  public:
+  LM _lm;
   nmodel(int maxw, int maxn)
     : ntab(maxw, maxn, 0.0)
     {}
@@ -44,9 +48,9 @@ class nmodel
     {
       massert(w!=0);
       if(n>=ntab.getLen2())
-	return 0.0;
+  return 0.0;
       else
-	return max(ntab(w, n), VALTYPE(PROB_SMOOTH));
+  return max(ntab(w, n), VALTYPE(PROB_SMOOTH));
     }
   VALTYPE&getRef(int w, int n)
     {
@@ -54,79 +58,105 @@ class nmodel
       return ntab(w, n);
     }
   template<class COUNT>
-  void normalize(nmodel<COUNT>&write,const Vector<WordEntry>* _evlist)const
+  void normalize(nmodel<COUNT>&write,const Vector<WordEntry>* _evlist)
 {
   int h1=ntab.getLen1(), h2=ntab.getLen2();
   int nParams=0;
-  if( _evlist&&(NTablesFactorGraphemes||NTablesFactorGeneral) )
+  if(kn_smooth_ntable)
+  {
+  /*LM _lm;
+  cerr<<"begin add bigram"<<endl;
+  for(int i=1;i<h1;i++)
+    {
+    for(int k=0;k<h2;k++)
+    {
+      cerr<<i<<" "<<k<<" "<<getValue(i, k)<<endl;
+      _lm.addBigram(k,i,getValue(i, k));
+    }
+    }
+  cerr<<"finish add bigram"<<endl;*/
+  _lm.setForAlignment();
+  _lm.knEstimate(interpolate);
+  _lm.write("nCountTable.kn");
+  for(int i=1;i<h1;i++)
+    {
+    for(int k=0;k<h2;k++)
+    {
+      write.getRef(i,k)=_lm.bigramProb(k,i);
+      nParams++;
+    }
+    }
+  _lm.clear();
+  }
+  else if( _evlist&&(NTablesFactorGraphemes||NTablesFactorGeneral) )
     {
       size_t maxlen=0;
       const Vector<WordEntry>&evlist=*_evlist;
       for(unsigned int i=1;i<evlist.size();i++)
-	maxlen=max(maxlen,evlist[i].word.length());
+      maxlen=max(maxlen,evlist[i].word.length());
       Array2<COUNT,Vector<COUNT> > counts(maxlen+1,MAX_FERTILITY+1,0.0);
       Vector<COUNT> nprob_general(MAX_FERTILITY+1,0.0);
       for(unsigned int i=1;i<min((unsigned int)h1,(unsigned int)evlist.size());i++)
-	{
-	  int l=evlist[i].word.length();
-	  for(int k=0;k<h2;k++)
-	    {
-	      counts(l,k)+=getValue(i,k);
-	      nprob_general[k]+=getValue(i,k);
-	    }
-	}
-      COUNT sum2=0; 
+  {
+    int l=evlist[i].word.length();
+    for(int k=0;k<h2;k++)
+      {
+        counts(l,k)+=getValue(i,k);
+        nprob_general[k]+=getValue(i,k);
+      }
+  }
+      COUNT sum2=0;
       for(unsigned int i=1;i<maxlen+1;i++)
-	{
-	  COUNT sum=0.0;
-	  for(int k=0;k<h2;k++)
-	    sum+=counts(i,k);
-	  sum2+=sum;
-	  if( sum )
-	    {
-	      double average=0.0;
-	      //cerr << "l: " << i << " " << sum << " ";
-	      for(int k=0;k<h2;k++)
-		{
-		  counts(i,k)/=sum;
-		  //cerr << counts(i,k) << ' ';
-		  average+=k*counts(i,k);
-		}
-	      //cerr << "avg: " << average << endl;
-	      //cerr << '\n';
-	    }
-	}
+  {
+    COUNT sum=0.0;
+    for(int k=0;k<h2;k++)
+      sum+=counts(i,k);
+    sum2+=sum;
+    if( sum )
+      {
+        double average=0.0;
+        //cerr << "l: " << i << " " << sum << " ";
+        for(int k=0;k<h2;k++)
+    {
+      counts(i,k)/=sum;
+      //cerr << counts(i,k) << ' ';
+      average+=k*counts(i,k);
+    }
+        //cerr << "avg: " << average << endl;
+        //cerr << '\n';
+      }
+  }
       for(unsigned int k=0;k<nprob_general.size();k++)
-	nprob_general[k]/=sum2;
-      
+  nprob_general[k]/=sum2;
+
       for(int i=1;i<h1;i++)
-	{
-	  int l=-1;
-	  if((unsigned int)i<evlist.size())
-	    l=evlist[i].word.length();
-	  COUNT sum=0.0;
-	  for(int k=0;k<h2;k++)
-	    sum+=getValue(i, k)+((l==-1)?0.0:(counts(l,k)*NTablesFactorGraphemes)) + NTablesFactorGeneral*nprob_general[k];
-	  assert(sum);
-	  for(int k=0;k<h2;k++)
-	    {
-	      write.getRef(i, k)=(getValue(i, k)+((l==-1)?0.0:(counts(l,k)*NTablesFactorGraphemes)))/sum + NTablesFactorGeneral*nprob_general[k];
-	      nParams++;
-	    }
-	}
+  {
+    int l=-1;
+    if((unsigned int)i<evlist.size())
+      l=evlist[i].word.length();
+    COUNT sum=0.0;
+    for(int k=0;k<h2;k++)
+      sum+=getValue(i, k)+((l==-1)?0.0:(counts(l,k)*NTablesFactorGraphemes)) + NTablesFactorGeneral*nprob_general[k];
+    assert(sum);
+    for(int k=0;k<h2;k++)
+      {
+        write.getRef(i, k)=(getValue(i, k)+((l==-1)?0.0:(counts(l,k)*NTablesFactorGraphemes)))/sum + NTablesFactorGeneral*nprob_general[k];
+        nParams++;
+      }
+  }
     }
   else
     for(int i=1;i<h1;i++)
       {
-	COUNT sum=0.0;
-	for(int k=0;k<h2;k++)
-	  sum+=getValue(i, k);
-	assert(sum);
-	for(int k=0;k<h2;k++)
-	  {
-	    write.getRef(i, k)=getValue(i, k)/sum;
-	    nParams++;
-	  }
+  COUNT sum=0.0;
+  for(int k=0;k<h2;k++)
+    sum+=getValue(i, k);
+  assert(sum);
+  for(int k=0;k<h2;k++)
+    {
+      write.getRef(i, k)=getValue(i, k)/sum;
+      nParams++;
+    }
       }
   cerr << "NTable contains " << nParams << " parameter.\n";
 }
@@ -135,11 +165,11 @@ class nmodel
     {
       int h1=ntab.getLen1(), h2=ntab.getLen2();
       for(int i=0;i<h1;i++)for(int k=0;k<h2;k++)
-	ntab(i, k)=0;
+  ntab(i, k)=0;
     }
   void printNTable(int noEW, const char* filename, const Vector<WordEntry>& evlist, bool) const;
   void readNTable(const char *filename);
-  
+
 };
 
 #endif

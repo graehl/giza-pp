@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 USA.
 
 */
+
 #include "model3.h"
 #include "collCounts.h"
 #include "Globals.h"
@@ -27,7 +28,9 @@ USA.
 #include "transpair_model5.h"
 #include "transpair_modelhmm.h"
 #include "Parameter.h"
-
+extern bool kn_smooth_ntable;
+extern bool smooth_model3;
+extern bool smooth_model4;
 #define TRICKY_IBM3_TRAINING
 
 GLOBAL_PARAMETER(int,M4_Dependencies,"depm4","d_{=1}: &1:l, &2:m, &4:F, &8:E, d_{>1}&16:l, &32:m, &64:F, &128:E",PARLEV_MODELS,76);
@@ -121,7 +124,7 @@ void model3::em(int noIterations, sentenceHandler& sHandler1)
       m = fs.size()-1;
       WordIndex x, y ;
       all_prob = prob_of_target_given_source(tTable, fs, es);
-      if (all_prob == 0)
+      if ((double)all_prob == 0.0)
 	cout << "\n" <<"all_prob = 0"; 
 	
       for ( x = 0 ; x < pow(l+1.0, double(m)) ; x++){ // For all possible alignmets A
@@ -142,12 +145,15 @@ void model3::em(int noIterations, sentenceHandler& sHandler1)
 
 	  for (j = 1 ; j <= m ; j++){
 	    tTable.incCount(es[A[j]], fs[j], templcount);
+		if(smooth_model3)
+			tTable._lm.addBigram(fs[j], es[A[j]], templcount);
 	    if (0 != A[j])
 	      dCountTable.getRef(j, A[j], l, m)+=templcount;
 	  }
 	  for(i = 0 ; i <= l ; i++)
 	    {
 	      nCountTable.getRef(es[i], Fert[i])+=templcount;
+		  if(kn_smooth_ntable)nCountTable._lm.addBigram(Fert[i],es[i],templcount);
 	      //cout << "AFTER INC2: " << templcount << " " << nCountTable.getRef(es[i], Fert[i]) << '\n';
 	    }
 	  p1_count +=  double(temp) * (Fert[0] * count) ;
@@ -160,7 +166,10 @@ void model3::em(int noIterations, sentenceHandler& sHandler1)
     // normalize tables
     if( OutputInAachenFormat==1 )
       tTable.printCountTable(tfile.c_str(),Elist.getVocabList(),Flist.getVocabList(),1);
-    tTable.normalizeTable(Elist, Flist);
+    if(smooth_model3)
+		tTable.copyFromLM();
+	else
+		tTable.normalizeTable(Elist, Flist);
     aCountTable.normalize(aTable);
     dCountTable.normalize(dTable);
     nCountTable.normalize(nTable,&Elist.getVocabList());
@@ -189,12 +198,6 @@ void model3::em(int noIterations, sentenceHandler& sHandler1)
   fn = time(NULL) ;
   cout << "\n" << "Entire Model3 Training took: " << difftime(fn, st) << " seconds\n";
 }
-
-
-
-      
-	  
-	
 	
 //-----------------------------------------------------------------------
 
@@ -357,6 +360,7 @@ int model3::viterbi(int noIterationsModel3, int noIterationsModel4,int noIterati
 	break;
       case '4':
 	{
+      smooth_model3=smooth_model4;
 	  switch(fromModel)
 	    {
 	    case 'H':
@@ -438,7 +442,10 @@ int model3::viterbi(int noIterationsModel3, int noIterationsModel4,int noIterati
     // now normalize count tables 
     if( dump_files&&OutputInAachenFormat==1 )
       tTable.printCountTable(tfile.c_str(),Elist.getVocabList(),Flist.getVocabList(),1);
-    tTable.normalizeTable(Elist, Flist);
+    if(smooth_model3)
+		tTable.copyFromLM();
+	else
+		tTable.normalizeTable(Elist, Flist);
     aCountTable.normalize(aTable);
     dCountTable.normalize(dTable);
     nCountTable.normalize(nTable,&Elist.getVocabList());
